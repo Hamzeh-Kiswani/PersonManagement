@@ -1,0 +1,328 @@
+﻿@page "/manage-person"
+@using PersonManagement.Shared.DTOs
+@inject PersonHttpClient Api
+@inject IJSRuntime JsRuntime
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="container py-4">
+    <!-- Toasts -->
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3">
+            @foreach (var t in toasts)
+            {
+                <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <strong class="me-auto">@t.Title</strong>
+                        <button type="button" class="btn-close" @onclick="() => RemoveToast(t.Id)"></button>
+                    </div>
+                    <div class="toast-body">@t.Body</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <h2 class="mb-3">Manage Persons</h2>
+
+    <!-- Controls: Search, Filter, Seed, Clear, Add -->
+    <div class="d-flex mb-3 align-items-center">
+        <input class="form-control me-2" style="max-width:200px"
+               placeholder="Search name..." @bind="searchTerm" @bind:event="oninput" />
+        <InputSelect class="form-select me-2" style="max-width:200px" @bind-Value="filterNationalityId">
+            <option value="0">All Nationalities</option>
+            @foreach (var n in nationalities)
+            {
+                <option value="@n.ID">@n.Name</option>
+            }
+        </InputSelect>
+        <button class="btn btn-warning me-2" @onclick="SeedDataAsync">
+            <i class="bi bi-hammer me-1"></i> Seed Data
+        </button>
+        <button class="btn btn-danger me-2" @onclick="ClearAllAsync">
+            <i class="bi bi-trash-fill me-1"></i> Clear All
+        </button>
+        <button class="btn btn-primary" @onclick="ShowAddForm">
+            <i class="bi bi-plus-lg me-1"></i> Add Person
+        </button>
+    </div>
+
+    <!-- Add Form -->
+    @if (showAddForm)
+    {
+        <EditForm Model="newDto" OnValidSubmit="AddAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">Full Name</label>
+                    <InputText class="form-control" @bind-Value="newDto.FullName" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Age</label>
+                    <InputNumber class="form-control" @bind-Value="newDto.Age" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Nationality</label>
+                    <InputSelect class="form-select" @bind-Value="newDto.NationalityID">
+                        <option value="">-- Select --</option>
+                        @foreach (var n in nationalities)
+                        {
+                            <option value="@n.ID">@n.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success me-2">Save</button>
+                    <button type="button" class="btn btn-secondary" @onclick="CancelAdd">Cancel</button>
+                </div>
+            </div>
+        </EditForm>
+    }
+
+    <!-- Edit Form -->
+    @if (showEditForm)
+    {
+        <EditForm Model="editDto" OnValidSubmit="UpdateAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="row g-3 mb-4">
+                <div class="col-md-2">
+                    <label class="form-label">ID</label>
+                    <InputNumber class="form-control" @bind-Value="editDto.ID" Disabled="true" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Full Name</label>
+                    <InputText class="form-control" @bind-Value="editDto.FullName" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Age</label>
+                    <InputNumber class="form-control" @bind-Value="editDto.Age" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Nationality</label>
+                    <InputSelect class="form-select" @bind-Value="editDto.NationalityID">
+                        <option value="">-- Select --</option>
+                        @foreach (var n in nationalities)
+                        {
+                            <option value="@n.ID">@n.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-12 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-success me-2">Update</button>
+                    <button type="button" class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+                </div>
+            </div>
+        </EditForm>
+    }
+
+    <!-- Table & Loading Spinner -->
+    @if (isLoading)
+    {
+        <div class="text-center my-5">
+            <div class="spinner-border" role="status"><span class="visually-hidden">Loading…</span></div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th @onclick='() => SortBy("ID")' style="cursor:pointer">ID @SortIndicator("ID")</th>
+                        <th @onclick='() => SortBy("FullName")' style="cursor:pointer">Name @SortIndicator("FullName")</th>
+                        <th @onclick='() => SortBy("Age")' style="cursor:pointer">Age @SortIndicator("Age")</th>
+                        <th @onclick='() => SortBy("NationalityName")' style="cursor:pointer">
+                            Nationality @SortIndicator("NationalityName")
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in PagedPersons)
+                    {
+                        <tr>
+                            <td>@p.ID</td>
+                            <td>@p.FullName</td>
+                            <td>@p.Age</td>
+                            <td>@p.NationalityName</td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary me-1" @onclick="() => ShowEditForm(p)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => DeleteAsync(p.ID)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <!-- Pagination Controls -->
+    @if (FilteredCount > 0)
+    {
+        <nav>
+            <ul class="pagination">
+                <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(1)">First</button>
+                </li>
+                <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)">Previous</button>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">Page @CurrentPage of @PageCount</span>
+                </li>
+                <li class="page-item @(CurrentPage == PageCount ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(CurrentPage + 1)">Next</button>
+                </li>
+                <li class="page-item @(CurrentPage == PageCount ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(PageCount)">Last</button>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+@code {
+    // Data + UI state
+    List<PersonReadDto> Persons = new();
+    List<NationalityDto> nationalities = new();
+    bool isLoading = false;
+
+    // Filter, sort, page state
+    string searchTerm = "";
+    int filterNationalityId = 0;
+    string sortColumn = "ID";
+    bool sortDesc = false;
+    int CurrentPage = 1;
+    const int PageSize = 10;
+
+    // Add/Edit forms
+    bool showAddForm = false;
+    PersonCreateDto newDto = new();
+    bool showEditForm = false;
+    PersonUpdateDto editDto = new();
+
+    // Toasts
+    class ToastMessage { public Guid Id { get; } = Guid.NewGuid(); public string Title = ""; public string Body = ""; }
+    List<ToastMessage> toasts = new();
+
+    // Computed
+    IEnumerable<PersonReadDto> Filtered =>
+      Persons
+        .Where(p => string.IsNullOrWhiteSpace(searchTerm)
+          || p.FullName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+        .Where(p => filterNationalityId == 0 || p.NationalityID == filterNationalityId);
+
+    int FilteredCount => Filtered.Count();
+    int PageCount => (int)Math.Ceiling((double)FilteredCount / PageSize);
+
+    IEnumerable<PersonReadDto> PagedPersons =>
+      ApplySort(Filtered)
+        .Skip((CurrentPage - 1) * PageSize)
+        .Take(PageSize);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            isLoading = true; 
+            StateHasChanged();
+            // load all
+            Persons = await Api.GetPeopleAsync(null, 0, int.MaxValue);
+            nationalities = await Api.GetNationalitiesAsync();
+            isLoading = false; 
+            StateHasChanged();
+        }
+    }
+
+    void SortBy(string col)
+    {
+        if (sortColumn == col) sortDesc = !sortDesc;
+        else { sortColumn = col; sortDesc = false; }
+    }
+
+    IEnumerable<PersonReadDto> ApplySort(IEnumerable<PersonReadDto> list) =>
+      sortColumn switch
+      {
+          "ID" => sortDesc ? list.OrderByDescending(p => p.ID) : list.OrderBy(p => p.ID),
+          "FullName" => sortDesc ? list.OrderByDescending(p => p.FullName) : list.OrderBy(p => p.FullName),
+          "Age" => sortDesc ? list.OrderByDescending(p => p.Age) : list.OrderBy(p => p.Age),
+          "NationalityName" => sortDesc
+      ? list.OrderByDescending(p => p.NationalityName)
+      : list.OrderBy(p => p.NationalityName),
+          _ => list
+      };
+
+    void ChangePage(int newPage)
+    {
+        if (newPage < 1 || newPage > PageCount) return;
+        CurrentPage = newPage;
+    }
+
+    async Task SeedDataAsync()
+    {
+        isLoading = true; StateHasChanged();
+        await Api.SeedAsync();
+        Persons = await Api.GetPeopleAsync(null, 0, int.MaxValue);
+        ShowToast("Seeded", "10,000 persons loaded.");
+        isLoading = false; StateHasChanged();
+    }
+
+    async Task ClearAllAsync()
+    {
+        if (!await JsRuntime.InvokeAsync<bool>("confirm", "Delete ALL persons?")) return;
+        isLoading = true; StateHasChanged();
+        var count = await Api.DeleteAllAsync();
+        Persons = new();
+        ShowToast("Deleted All", $"{count} removed.");
+        isLoading = false; StateHasChanged();
+    }
+
+    void ShowAddForm() { newDto = new PersonCreateDto(); showAddForm = true; showEditForm = false; }
+    void CancelAdd() => showAddForm = false;
+    async Task AddAsync()
+    {
+        await Api.AddPersonAsync(newDto);
+        Persons = await Api.GetPeopleAsync(null, 0, int.MaxValue);
+        ShowToast("Added", "Person created.");
+        showAddForm = false;
+    }
+
+    void ShowEditForm(PersonReadDto p)
+    { editDto = new PersonUpdateDto { ID = p.ID, FullName = p.FullName, Age = p.Age, NationalityID = p.NationalityID }; showEditForm = true; showAddForm = false; }
+    void CancelEdit() => showEditForm = false;
+
+    async Task UpdateAsync()
+    {
+        await Api.UpdatePersonAsync(editDto);
+        Persons = await Api.GetPeopleAsync(null, 0, int.MaxValue);
+        ShowToast("Updated", "Person updated.");
+        showEditForm = false;
+    }
+
+    async Task DeleteAsync(int id)
+    {
+        if (!await JsRuntime.InvokeAsync<bool>("confirm", $"Delete person {id}?")) return;
+        await Api.DeletePersonAsync(id);
+        Persons = Persons.Where(p => p.ID != id).ToList();
+        ShowToast("Deleted", "Person removed.");
+    }
+
+    MarkupString SortIndicator(string col) =>
+      sortColumn == col
+        ? (MarkupString)(sortDesc ? "&darr;" : "&uarr;")
+        : (MarkupString)string.Empty;
+
+    void ShowToast(string title, string body)
+    {
+        var t = new ToastMessage { Title = title, Body = body };
+        toasts.Add(t);
+        _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => { toasts.Remove(t); StateHasChanged(); }));
+    }
+
+    void RemoveToast(Guid id) => toasts.RemoveAll(x => x.Id == id);
+}

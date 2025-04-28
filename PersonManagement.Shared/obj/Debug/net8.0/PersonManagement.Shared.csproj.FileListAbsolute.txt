@@ -1,0 +1,12 @@
+C:\Users\MohammadQaddoumi\Source\Repos\PersonManagement\PersonManagement.Shared\bin\Debug\net8.0\PersonManagement.Shared.deps.json
+C:\Users\MohammadQaddoumi\Source\Repos\PersonManagement\PersonManagement.Shared\bin\Debug\net8.0\PersonManagement.Shared.dll
+C:\Users\MohammadQaddoumi\Source\Repos\PersonManagement\PersonManagement.Shared\bin\Debug\net8.0\PersonManagement.Shared.pdb
+C:\Users\MohammadQaddoumi\Source\Repos\PersonManagement\PersonManagement.Shared\obj\Debug\net8.0\PersonManagement.Shared.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\MohammadQaddoumi\Source\Repos\PersonManagement\PersonManagement.Shared\obj\Debug\net8.0\PersonManagement.Shared.AssemblyInfoInputs.cache
+C:\Users\MohammadQaddoumi\Source\Repos\PersonManagement\PersonManagement.Shared\obj\Debug\net8.0\PersonManagement.Shared.AssemblyInfo.cs
+C:\Users\MohammadQaddoumi\Source\Repos\PersonManagement\PersonManagement.Shared\obj\Debug\net8.0\PersonManagement.Shared.csproj.CoreCompileInputs.cache
+C:\Users\MohammadQaddoumi\Source\Repos\PersonManagement\PersonManagement.Shared\obj\Debug\net8.0\PersonManagement.Shared.sourcelink.json
+C:\Users\MohammadQaddoumi\Source\Repos\PersonManagement\PersonManagement.Shared\obj\Debug\net8.0\PersonManagement.Shared.dll
+C:\Users\MohammadQaddoumi\Source\Repos\PersonManagement\PersonManagement.Shared\obj\Debug\net8.0\refint\PersonManagement.Shared.dll
+C:\Users\MohammadQaddoumi\Source\Repos\PersonManagement\PersonManagement.Shared\obj\Debug\net8.0\PersonManagement.Shared.pdb
+C:\Users\MohammadQaddoumi\Source\Repos\PersonManagement\PersonManagement.Shared\obj\Debug\net8.0\ref\PersonManagement.Shared.dll
